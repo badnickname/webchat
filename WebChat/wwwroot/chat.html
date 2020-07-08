@@ -1,0 +1,98 @@
+﻿<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script>
+    var host = "http://localhost:5000";
+    var lastid = 0;
+	
+    function send() {
+        var user = $('#user-field').val();
+        var text = $('#text-field').val();
+        $('#text-field').val('');
+
+        $.ajax ({
+            url: host+"/chat/send",
+            method: "POST",
+            data: ({user: user, text: text}),
+            success: function() {
+                
+            }
+        });
+    }
+
+    function readall() {
+        var box = $('#messagebox-field');
+
+        $.ajax ({
+            url: host+"/chat/readall",
+            dataType: 'text',
+            jsonpCallback: 'online',
+            crossDomain: true,
+            type: 'GET',
+            cache: false,
+            success: function(data) {
+                messages =  jQuery.parseJSON(data);
+                box.empty();
+                messages.messages.forEach(
+                    function(msg) {
+                        box.append("<div class='chat-block'><b>"+msg.user+"["+msg.time+"]</b> "+msg.text+"</div>");
+						lastid = msg.id;
+                    }
+                );
+				if(messages.messages.length>0) {
+					box.scrollTop(box.prop('scrollHeight'));
+				}
+            }
+        });
+    }
+	
+	function read() {
+		var box = $('#messagebox-field');
+		
+		$.ajax ({
+            url: host+"/chat/readfrom",
+            dataType: 'text',
+            jsonpCallback: 'online',
+            crossDomain: true,
+            type: 'GET',
+            cache: false,
+			data: ({id: lastid}),
+            success: function(data) {
+                messages =  jQuery.parseJSON(data);
+                messages.messages.forEach(
+                    function(msg) {
+                        box.append("<div class='chat-block'><b>"+msg.user+"["+msg.time+"]</b> "+msg.text+"</div>");
+						lastid = msg.id;
+                    }
+                );
+				if(messages.messages.length>0) {
+					box.scrollTop(box.prop('scrollHeight'));
+				}
+            }
+        });
+	}
+
+	$(document).ready(function() {
+		setTimeout(checkMessages, 2000);
+		readall();
+	});
+
+    function checkMessages(){
+        read();
+        setTimeout(checkMessages, 2000);
+    }
+	
+	$(document).ready(function() {
+		$('#text-field').keydown(function(e) {
+			if(e.keyCode === 13) {
+				send();
+			}
+		});
+	});
+
+    
+</script>
+<div id="messagebox-field" style="overflow-y: scroll; height:100px">
+    Пусто
+</div>
+<div>
+    User: <input id="user-field" type="text" value="Guest"> Message: <input id="text-field" type="text" width="100%"> <button onclick="send()">Send</button>
+</div>
